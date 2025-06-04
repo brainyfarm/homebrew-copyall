@@ -6,7 +6,7 @@ add_to_ignore_files() {
     EXCLUDE_PATTERNS+=("${patterns[@]}")
   fi
 
-  SCRIPT_IGNORE_ENTRIES+=("copyall" "copyall/")
+  SCRIPT_IGNORE_ENTRIES+=("copyall" "copyall/" "*.o" "*.pyc" "*.class" "*.swp" "*~")
 }
 
 load_ignored_files() {
@@ -22,12 +22,36 @@ load_ignored_files() {
     fi
   done
 
+  # Read global git ignore file if configured
+  local global_ignore
+  global_ignore=$(git config --get core.excludesfile 2>/dev/null)
+  if [[ -f "$global_ignore" ]]; then
+    while IFS= read -r line || [[ -n "$line" ]]; do
+      line=$(trim "$line")
+      [[ -z "$line" || "$line" == \#* ]] && continue
+      IGNORED_FILES+=("$line")
+    done < "$global_ignore"
+  fi
+
   $IGNORE_TESTS && IGNORED_FILES+=("test" "tests")
   if $SRC_ONLY; then
     for dir in "$ROOT_DIR"/*/; do
       [[ "$(basename "$dir")" != "src" ]] && IGNORED_FILES+=("$(basename "$dir")")
     done
   fi
+  if [[ -n "$FOLDERS" ]]; then
+    IFS=',' read -ra allowed <<< "$FOLDERS"
+    for dir in "$ROOT_DIR"/*/; do
+      local base="$(basename "$dir")"
+      local keep=false
+      for f in "${allowed[@]}"; do
+        [[ "$base" == "$f" ]] && keep=true && break
+      done
+      $keep || IGNORED_FILES+=("$base")
+    done
+  fi
+
+  IGNORED_FILES+=("${EXCLUDE_PATTERNS[@]}")
 }
 
 is_ignored() {

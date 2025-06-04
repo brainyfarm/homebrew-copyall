@@ -22,6 +22,9 @@ Usage: copyall [options]
 Options:
   -f, --folders            Comma-separated list of folders to include.
   --file-types             Comma-separated list of file types to include.
+  --exclude                Comma-separated list of additional ignore patterns.
+  --output-file <path>     Write output to a custom file path.
+  --dry-run                Preview actions without writing output.
   --ignore-tests           Exclude test files and directories.
   --src-only               Only include the 'src' folder.
   --remove-comments        Remove comments from code files.
@@ -44,6 +47,18 @@ parse_arguments() {
       --file-types)
         FILE_TYPES="$2"
         shift 2
+        ;;
+      --exclude)
+        EXCLUDE_PATTERN_STRING="$2"
+        shift 2
+        ;;
+      --output-file)
+        OUTPUT_FILE="$2"
+        shift 2
+        ;;
+      --dry-run)
+        DRY_RUN=true
+        shift
         ;;
       --ignore-tests)
         IGNORE_TESTS=true
@@ -91,18 +106,22 @@ parse_arguments() {
 }
 
 setup_environment() {
-  mkdir -p "$COPYALL_DIR"
+  local out_dir
+  out_dir=$(dirname "$OUTPUT_FILE")
+  mkdir -p "$out_dir"
   : > "$OUTPUT_FILE"
   log_info "Environment setup completed."
 
-  if [[ -f "$GITIGNORE_FILE" ]]; then
-    if ! grep -qxF "copyall/" "$GITIGNORE_FILE"; then
-      echo -e "\ncopyall/" >> "$GITIGNORE_FILE"
-      log_info "Added 'copyall/' to .gitignore."
+  if [[ "$OUTPUT_FILE" == "$COPYALL_DIR/copyall.txt" ]]; then
+    if [[ -f "$GITIGNORE_FILE" ]]; then
+      if ! grep -qxF "copyall/" "$GITIGNORE_FILE"; then
+        echo -e "\ncopyall/" >> "$GITIGNORE_FILE"
+        log_info "Added 'copyall/' to .gitignore."
+      fi
+    else
+      echo "copyall/" > "$GITIGNORE_FILE"
+      log_info "Created .gitignore and added 'copyall/'."
     fi
-  else
-    echo "copyall/" > "$GITIGNORE_FILE"
-    log_info "Created .gitignore and added 'copyall/'."
   fi
 }
 
@@ -112,14 +131,22 @@ finalize_execution() {
   local duration=$((end_time - START_TIME))
   log_info "CopyAll process completed in $duration seconds."
 
-  if [[ -n "$CLIP_CMD" ]]; then
-    cat "$OUTPUT_FILE" | eval "$CLIP_CMD"
-    log_info "Output copied to clipboard."
+  if $DRY_RUN; then
+    log_info "Dry-run mode - output not copied to clipboard."
   else
-    log_info "Clipboard command not found. Output not copied to clipboard."
+    if [[ -n "$CLIP_CMD" ]]; then
+      cat "$OUTPUT_FILE" | eval "$CLIP_CMD"
+      log_info "Output copied to clipboard."
+    else
+      log_info "Clipboard command not found. Output not copied to clipboard."
+    fi
   fi
 
   local file_count
-  file_count=$(grep -c "^--- Contents of " "$OUTPUT_FILE")
+  if [[ -f "$OUTPUT_FILE" ]]; then
+    file_count=$(grep -c "^--- Contents of " "$OUTPUT_FILE")
+  else
+    file_count=0
+  fi
   echo "Processed $file_count files in $duration seconds."
 }

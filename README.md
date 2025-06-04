@@ -17,6 +17,9 @@ CopyAll is a customizable file copying script written in Bash. It allows you to 
 - **Copies the output to clipboard**: Automatically copies the output to your clipboard.
 - **Overwrites the output file instead of appending**: Ensures that each run starts fresh.
 - **Automatically ignores files and directories specified in `.gitignore` and `.copyallignore`**: Respects your ignore files to avoid processing unwanted files.
+- **Supports additional ignore patterns via `--exclude` and global git ignores**.
+- **Custom output location with `--output-file`**.
+- **Dry-run mode to preview actions without writing files**.
 
 ## Requirements
 
@@ -83,6 +86,9 @@ copyall [options]
 
 - `-f`, `--folders` : Comma-separated list of folders to include.
 - `--file-types` : Comma-separated list of file types to include.
+- `--exclude` : Comma-separated list of additional ignore patterns.
+- `--output-file <path>` : Write output to a custom file path.
+- `--dry-run` : Preview actions without writing output.
 - `--ignore-tests` : Exclude test files and directories.
 - `--src-only` : Only include the `src` folder.
 - `--remove-comments` : Remove comments from code files.
@@ -125,6 +131,18 @@ copyall [options]
     copyall --max-file-size 10000 --verbose
     ```
 
+- **Preview which files will be processed without writing output**:
+
+    ```bash
+    copyall --dry-run
+    ```
+
+- **Write output to a custom location and ignore additional patterns**:
+
+    ```bash
+    copyall --output-file /tmp/out.txt --exclude "*.log,build"
+    ```
+
 - **Exclude test directories and process only specific folders**:
 
     ```bash
@@ -154,6 +172,8 @@ The script automatically ignores:
 - Test files and directories if `--ignore-tests` is specified.
 - Non-specified folders if `--folders` option is used.
 - Non-specified file types if `--file-types` option is used.
+- Patterns specified via `--exclude`.
+- Entries from your global git ignore file if configured.
 
 ## Advanced Usage
 
