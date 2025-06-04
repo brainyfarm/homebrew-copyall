@@ -17,6 +17,14 @@ class Copyall < Formula
   end
 
   test do
-    assert_match "Usage:", shell_output("#{bin}/copyall --help")
+    (testpath/"src").mkpath
+    sample = testpath/"src/sample.txt"
+    sample.write("hello world")
+
+    system "#{bin}/copyall", "--src-only"
+
+    output = testpath/"copyall/copyall.txt"
+    assert_predicate output, :exist?
+    assert_match "hello world", output.read
   end
 end
