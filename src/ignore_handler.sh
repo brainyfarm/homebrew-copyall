@@ -39,12 +39,13 @@ load_ignored_files() {
       [[ "$(basename "$dir")" != "src" ]] && IGNORED_FILES+=("$(basename "$dir")")
     done
   fi
+
   if [[ -n "$FOLDERS" ]]; then
-    IFS=',' read -ra allowed <<< "$FOLDERS"
+    IFS=',' read -ra FOLDER_ARRAY <<< "$FOLDERS"
     for dir in "$ROOT_DIR"/*/; do
       local base="$(basename "$dir")"
       local keep=false
-      for f in "${allowed[@]}"; do
+      for f in "${FOLDER_ARRAY[@]}"; do
         [[ "$base" == "$f" ]] && keep=true && break
       done
       $keep || IGNORED_FILES+=("$base")
@@ -57,6 +58,18 @@ load_ignored_files() {
 is_ignored() {
   local path="$1"
   local rel_path="${path#$ROOT_DIR/}"
+
+  if [[ -n "$FOLDERS" ]]; then
+    local base="${rel_path%%/*}"
+    local match=false
+    for dir in "${FOLDER_ARRAY[@]}"; do
+      if [[ "$base" == "$dir" ]]; then
+        match=true
+        break
+      fi
+    done
+    $match || return 0
+  fi
 
   for pattern in "${IGNORED_FILES[@]}"; do
     if [[ "$rel_path" == $pattern || "$rel_path" == $pattern/* ]]; then

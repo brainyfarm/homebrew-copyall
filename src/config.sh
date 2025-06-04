@@ -28,6 +28,7 @@ SYM_ELBOW="└──"
 IGNORED_FILES=()
 EXCLUDE_PATTERNS=()
 SCRIPT_IGNORE_ENTRIES=()
+FOLDER_ARRAY=()
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
   CLIP_CMD="pbcopy"
